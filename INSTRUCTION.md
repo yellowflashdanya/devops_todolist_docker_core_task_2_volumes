@@ -1,28 +1,20 @@
-# Інструкції для запуску MySQL і Python App контейнерів
+# Use the official MySQL image from Docker Hub
 
-### 1. **Підготовка Dockerfile для MySQL**
-
-Створіть файл `Dockerfile.mysql` для налаштування бази даних MySQL за допомогою офіційного образу MySQL.
-
-**Dockerfile.mysql:**
-
-```dockerfile
-# Використовуємо офіційний образ MySQL
 FROM mysql:latest
 
-# Встановлюємо змінні середовища для MySQL
+# Set environment variables for MySQL
+
 ENV MYSQL_ROOT_PASSWORD=rootpassword
 ENV MYSQL_DATABASE=app_db
 ENV MYSQL_USER=app_user
 ENV MYSQL_PASSWORD=1234
 
-# Відкриваємо порт MySQL (за замовчуванням 3306)
+# Expose the default MySQL port
+
 EXPOSE 3306
-```
 
-### 2. **Building the Image of MySQL**
-
-Для створення образу MySQL з файлу Dockerfile.mysql скористайтеся командою:
+2. Building the Image of MySQL
+   Для створення образу MySQL з файлу Dockerfile.mysql скористайтеся командою:
 
 ```bash
 docker build -f Dockerfile.mysql -t mysql-local:1.0.0 .
@@ -30,9 +22,8 @@ docker build -f Dockerfile.mysql -t mysql-local:1.0.0 .
 
 Це створить образ з тегом mysql-local:1.0.0.
 
-### 3. **Запуск контейнера MySQL з прикріпленим томом**
-
-Тепер ви можете запустити контейнер для MySQL з прикріпленим томом для зберігання даних:
+3. Запуск контейнера MySQL з прикріпленим томом
+   Тепер ви можете запустити контейнер для MySQL з прикріпленим томом для зберігання даних:
 
 ```bash
 docker run -d \
@@ -52,16 +43,47 @@ docker run -d \
 
 -p 3306:3306: Відкриває порт 3306 для доступу до MySQL з хостової машини.
 
-### 4. **Як отримати доступ до додатку через браузер**
+4. Запуск Python App контейнера та підключення до MySQL
+   Перш ніж запускати Python App контейнер, оновіть конфігурацію підключення до бази даних в Python додатку. Вкажіть IP-адресу контейнера MySQL. Для цього можна використовувати ім'я контейнера замість IP, оскільки Docker автоматично налаштовує мережу між контейнерами.
 
-```arduino
-http://localhost:порт_додатку
+Оновлення конфігурації Python додатку:
+Змініть значення HOST у конфігурації вашого Python додатку (наприклад, для Django в settings.py):
+
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'mysql.connector.django',
+        'NAME': 'app_db',
+        'USER': 'app_user',
+        'PASSWORD': '1234',
+        'HOST': 'mysql-container',  # Ім'я контейнера MySQL
+        'PORT': '3306',  # Порт MySQL
+    }
+}
 ```
 
-Замість порт_додатку вкажіть порт, який ви відкрили в Docker при запуску контейнера Python додатку (наприклад, 8000, якщо ви використовуєте Django за замовчуванням).
+Запуск контейнера Python App:
+Для запуску контейнера додатку (наприклад, якщо у вас є Dockerfile для додатку Python):
 
-- Примітки
+```bash
+docker build -t python-app:latest .
+docker run -d --name python-app --link mysql-container:mysql -p 8000:8000 python-app:latest
+```
 
-MySQL Image: https://hub.docker.com/repository/docker/danyakube/mysql-local/general
+Пояснення:
 
-Python App Image: https://hub.docker.com/repository/docker/danyakube/todoapp/general
+--link mysql-container:mysql: Встановлює зв'язок між контейнерами. mysql-container — це ім'я контейнера MySQL, а mysql — псевдонім для доступу до цього контейнера в Python додатку.
+
+-p 8000:8000: Відкриває порт 8000 для доступу до вашого Python додатку (залежно від того, який порт відкрито у вашому Dockerfile для Python додатку).
+
+5. Як отримати доступ до додатку через браузер
+   Відкрийте браузер і перейдіть за адресою:
+
+```arduino
+http://localhost:8000
+```
+
+6. Посилання на репозиторії на Docker Hub
+   MySQL Image на Docker Hub: https://hub.docker.com/repository/docker/danyakube/mysql-local/general
+
+Python App Image на Docker Hub: https://hub.docker.com/repository/docker/danyakube/todoapp/general
