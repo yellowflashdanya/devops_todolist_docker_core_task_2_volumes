@@ -1,4 +1,4 @@
-# Use the official MySQL image from Docker Hub
+# Use the official MySQL image from Docker Hub.
 
 FROM mysql:latest
 
